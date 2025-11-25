@@ -17,10 +17,9 @@ COPY src ./src
 # Construimos el archivo .jar
 RUN mvn package -DskipTests
 
- \
 # --- Fase 2: Ejecución ---
-# Usamos una imagen mucho más ligera que solo contiene Java 17 para ejecutar la app.
-FROM openjdk:17-jdk-slim
+# Usamos una imagen mucho más ligera de Eclipse Temurin con Java 17 para ejecutar la app.
+FROM eclipse-temurin:17-jdk-slim
 
 # Establecemos el directorio de trabajo
 WORKDIR /app
@@ -29,7 +28,8 @@ WORKDIR /app
 COPY --from=build /app/target/api-server-0.0.1-SNAPSHOT.jar .
 
 # Exponemos el puerto en el que correrá la aplicación
-EXPOSE 8080
+# Render usa el puerto 10000 por defecto, así que no es estrictamente necesario, pero es una buena práctica.
+EXPOSE 10000
 
 # El comando para arrancar la aplicación cuando el contenedor se inicie
 ENTRYPOINT ["java", "-jar", "api-server-0.0.1-SNAPSHOT.jar"]
