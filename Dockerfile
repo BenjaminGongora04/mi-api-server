@@ -18,8 +18,8 @@ COPY src ./src
 RUN mvn package -DskipTests
 
 # --- Fase 2: Ejecución ---
-# Usamos una imagen mucho más ligera de Eclipse Temurin con Java 17 para ejecutar la app.
-FROM eclipse-temurin:17-jdk-slim
+# Usamos una imagen ligera y oficial de Eclipse Temurin con Java 17, basada en Alpine Linux.
+FROM eclipse-temurin:17-jdk-alpine
 
 # Establecemos el directorio de trabajo
 WORKDIR /app
@@ -27,8 +27,7 @@ WORKDIR /app
 # Copiamos el .jar que construimos en la fase anterior
 COPY --from=build /app/target/api-server-0.0.1-SNAPSHOT.jar .
 
-# Exponemos el puerto en el que correrá la aplicación
-# Render usa el puerto 10000 por defecto, así que no es estrictamente necesario, pero es una buena práctica.
+# Exponemos el puerto que usará Render (aunque lo hace automático, es buena práctica)
 EXPOSE 10000
 
 # El comando para arrancar la aplicación cuando el contenedor se inicie
