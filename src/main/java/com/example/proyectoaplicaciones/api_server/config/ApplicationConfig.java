@@ -22,8 +22,7 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        // Le dice a Spring cómo buscar un usuario por su email
-        return username -> userRepository.findByEmail(username)
+        return username -> userRepository.findByEmail(username) // Ahora esto devuelve un Optional
                 .map(user -> org.springframework.security.core.userdetails.User
                         .withUsername(user.getEmail())
                         .password(user.getPassword())
@@ -34,7 +33,6 @@ public class ApplicationConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
-        // Es el proveedor de autenticación que usa el UserDetailsService y el Hasher de contraseñas
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService());
         authProvider.setPasswordEncoder(passwordEncoder);
