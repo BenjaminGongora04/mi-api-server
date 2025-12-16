@@ -1,6 +1,7 @@
 package com.example.proyectoaplicaciones.api_server.config;
 
-import com.example.proyectoaplicaciones.api_server.user.UserRepository;import org.springframework.context.annotation.Bean;
+import com.example.proyectoaplicaciones.api_server.user.UserRepository;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -21,17 +22,19 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
+        // Le dice a Spring cómo buscar un usuario por su email
         return username -> userRepository.findByEmail(username)
                 .map(user -> org.springframework.security.core.userdetails.User
                         .withUsername(user.getEmail())
                         .password(user.getPassword())
                         .roles(user.getRole().name())
                         .build())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con el email: " + username));
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
+        // Es el proveedor de autenticación que usa el UserDetailsService y el Hasher de contraseñas
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService());
         authProvider.setPasswordEncoder(passwordEncoder);
