@@ -1,5 +1,8 @@
 package com.example.proyectoaplicaciones.api_server.user;
 
+// Se importan las clases que necesitamos
+import com.example.proyectoaplicaciones.api_server.config.JwtService;
+import com.example.proyectoaplicaciones.api_server.dto.AuthResponse;
 import com.example.proyectoaplicaciones.api_server.dto.LoginRequest;
 import com.example.proyectoaplicaciones.api_server.dto.RegisterRequest;
 import org.springframework.http.ResponseEntity;
@@ -12,43 +15,46 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService; // La fábrica de tokens
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    // Inyectamos el JwtService en el constructor
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody RegisterRequest registerRequest) {
-        // Verificar si el usuario o el email ya existen
-        if (userRepository.findByUsername(registerRequest.getUsername()) != null) {
-            return ResponseEntity.badRequest().build(); // Username ya existe
-        }
-        if (userRepository.findByEmail(registerRequest.getEmail()) != null) {
-            return ResponseEntity.badRequest().build(); // Email ya existe
+    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest registerRequest) {
+        if (userRepository.findByUsername(registerRequest.getUsername()) != null || userRepository.findByEmail(registerRequest.getEmail()) != null) {
+            return ResponseEntity.badRequest().build();
         }
 
         User newUser = new User();
         newUser.setUsername(registerRequest.getUsername());
         newUser.setEmail(registerRequest.getEmail());
         newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        // Aquí podrías asignar un rol por defecto si tu clase User tiene roles
+        newUser.setRole(Role.USER);
 
         User savedUser = userRepository.save(newUser);
-        return ResponseEntity.ok(savedUser);
+
+        // Generamos el token y lo devolvemos
+        String jwtToken = jwtService.generateToken(savedUser);
+        AuthResponse authResponse = new AuthResponse(jwtToken, savedUser.getRole());
+        return ResponseEntity.ok(authResponse);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> login(@RequestBody LoginRequest loginRequest) {
-        // Buscamos al usuario por su email
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.getEmail());
 
-        // Verificamos si el usuario existe y si la contraseña coincide usando BCrypt
         if (user != null && passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return ResponseEntity.ok(user); // Credenciales correctas
+            // Generamos el token y lo devolvemos
+            String jwtToken = jwtService.generateToken(user);
+            AuthResponse authResponse = new AuthResponse(jwtToken, user.getRole());
+            return ResponseEntity.ok(authResponse);
         }
 
-        // Si no, devolvemos un error de no autorizado
         return ResponseEntity.status(401).build();
     }
 }
