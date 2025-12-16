@@ -17,7 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
-    private final AuthenticationProvider authenticationProvider; // El nuevo cerebro
+    private final AuthenticationProvider authenticationProvider;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, AuthenticationProvider authenticationProvider) {
         this.jwtAuthFilter = jwtAuthFilter;
@@ -29,20 +29,16 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authz -> authz
-                        // Regla 1: El login y el registro son públicos.
                         .requestMatchers("/api/auth/**").permitAll()
-                        // Regla 2: Cualquiera puede LEER posts y comentarios.
                         .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/comments/**").permitAll()
-                        // Regla 3: SOLO Admins/Mods pueden BORRAR.
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/**", "/api/comments/**").hasAnyRole(Role.ADMIN.name(), Role.MODERATOR.name())
-                        // Regla 4: CUALQUIER OTRA petición requiere autenticación.
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Le decimos a Spring que use nuestro nuevo cerebro para autenticar
-                .authenticationProvider(authenticationProvider)
+                .authenticationProvider(authenticationProvider) // Le decimos que use nuestro nuevo cerebro
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 }
+
