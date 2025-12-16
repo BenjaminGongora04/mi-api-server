@@ -1,13 +1,15 @@
 package com.example.proyectoaplicaciones.api_server.user;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "users") // Usar "users" en lugar de "user" para evitar conflictos con palabras reservadas de SQL
+@Table(name = "users")
 public class User {
 
     @Id
@@ -18,11 +20,16 @@ public class User {
     private String email;
     private String password;
 
-    // Constructor vacío (necesario para JPA)
+    // --- INICIO DE LA CORRECCIÓN ---
+    @Enumerated(EnumType.STRING) // Le dice a JPA que guarde el nombre del rol (ej. "USER") como un String en la BD.
+    private Role role;
+    // --- FIN DE LA CORRECCIÓN ---
+
+    // Constructor vacío
     public User() {
     }
 
-    // --- Getters y Setters generados manualmente ---
+    // --- Getters y Setters ---
 
     public Integer getId() {
         return id;
@@ -55,4 +62,15 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Getter y Setter para el nuevo campo 'role'.
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+    // --- FIN DE LA CORRECCIÓN ---
 }
