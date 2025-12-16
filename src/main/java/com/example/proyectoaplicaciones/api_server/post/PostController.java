@@ -22,4 +22,11 @@ public class PostController {
     public Post createPost(@RequestBody Post post) {
         return postService.createPost(post);
     }
+
+    // --- MÉTODO AÑADIDO ---
+    @DeleteMapping("/{id}")
+    public void deletePost(@PathVariable Integer id) {
+        postService.deletePost(id);
+    }
+    // ---------------------
 }

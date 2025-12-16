@@ -19,4 +19,10 @@ public class PostService {
     public Post createPost(Post post) {
         return postRepository.save(post);
     }
+
+    public void deletePost(Integer id) {
+        // Aquí se asume que tienes 'postRepository' inyectado en esta clase.
+        // El método deleteById es un método estándar que provee JpaRepository.
+        postRepository.deleteById(id);
+    }
 }
