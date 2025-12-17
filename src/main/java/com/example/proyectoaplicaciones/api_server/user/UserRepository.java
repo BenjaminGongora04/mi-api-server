@@ -1,15 +1,12 @@
 package com.example.proyectoaplicaciones.api_server.user;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.Optional; // <-- Se añade la importación necesaria.
+import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<User, Integer> {    // Este método puede que lo uses en otro sitio, lo dejamos como está.
-    User findByUsername(String username);
-
+public interface UserRepository extends JpaRepository<User, Integer> {
     // --- INICIO DE LA CORRECCIÓN ---
-    // Se cambia el tipo de retorno a Optional<User>.
-    // Esto es crucial para que la nueva configuración de seguridad funcione
-    // y soluciona el error "cannot find symbol: method map".
+    // Ambos métodos ahora devuelven Optional para un manejo de errores más seguro y consistente.
+    Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
     // --- FIN DE LA CORRECCIÓN ---
 }
