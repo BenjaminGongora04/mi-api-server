@@ -29,12 +29,17 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
-        // --- INICIO DE LA CORRECCIÓN ---
-        // Se comprueba si el email ya existe usando el método que devuelve un Optional.
-        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("El email ya está en uso.");
+        // --- INICIO DE LA CORRECCIÓN FINAL ---
+        // 1. Comprobar si el nombre de usuario ya existe.
+        if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
+            return ResponseEntity.badRequest().body("Error: El nombre de usuario ya está en uso.");
         }
-        // --- FIN DE LA CORRECCIÓN ---
+
+        // 2. Comprobar si el email ya existe.
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+            return ResponseEntity.badRequest().body("Error: El email ya está en uso.");
+        }
+        // --- FIN DE LA CORRECCIÓN FINAL ---
 
         User newUser = new User();
         newUser.setUsername(registerRequest.getUsername());
@@ -55,7 +60,6 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        // Se autentica al usuario. Si las credenciales son incorrectas, esto lanzará una excepción.
         authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(
                 loginRequest.getEmail(),
@@ -63,7 +67,6 @@ public class UserController {
             )
         );
 
-        // Si la autenticación es exitosa, buscamos al usuario para generar el token.
         User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow();
         
         UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername(user.getEmail())
