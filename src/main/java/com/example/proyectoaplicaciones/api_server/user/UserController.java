@@ -18,30 +18,31 @@ public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager; // Se añade el AuthenticationManager
+    private final AuthenticationManager authenticationManager;
 
     public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager; // Se inicializa
+        this.authenticationManager = authenticationManager;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest registerRequest) {
-        if (userRepository.findByUsername(registerRequest.getUsername()) != null || userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Se comprueba si el email ya existe usando el método que devuelve un Optional.
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+            return ResponseEntity.badRequest().body("El email ya está en uso.");
         }
+        // --- FIN DE LA CORRECCIÓN ---
 
         User newUser = new User();
         newUser.setUsername(registerRequest.getUsername());
         newUser.setEmail(registerRequest.getEmail());
         newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         newUser.setRole(Role.USER);
-
         userRepository.save(newUser);
 
-        // Se crea el UserDetails para generar el token
         UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername(newUser.getEmail())
                 .password(newUser.getPassword())
                 .roles(newUser.getRole().name())
@@ -49,15 +50,12 @@ public class UserController {
 
         String jwtToken = jwtService.generateToken(userDetails);
         AuthResponse authResponse = new AuthResponse(jwtToken, newUser.getId(), newUser.getUsername(), newUser.getEmail(), newUser.getRole());
-
         return ResponseEntity.ok(authResponse);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
-        // --- INICIO DE LA CORRECCIÓN ---
-        // Se utiliza el AuthenticationManager de Spring para validar las credenciales.
-        // Esto es más seguro y estándar.
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        // Se autentica al usuario. Si las credenciales son incorrectas, esto lanzará una excepción.
         authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(
                 loginRequest.getEmail(),
@@ -65,8 +63,7 @@ public class UserController {
             )
         );
 
-        // Si la autenticación es exitosa, buscamos al usuario (que sabemos que existe)
-        // y generamos el token.
+        // Si la autenticación es exitosa, buscamos al usuario para generar el token.
         User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow();
         
         UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername(user.getEmail())
@@ -76,8 +73,6 @@ public class UserController {
 
         String jwtToken = jwtService.generateToken(userDetails);
         AuthResponse authResponse = new AuthResponse(jwtToken, user.getId(), user.getUsername(), user.getEmail(), user.getRole());
-
         return ResponseEntity.ok(authResponse);
-        // --- FIN DE LA CORRECCIÓN ---
     }
 }
