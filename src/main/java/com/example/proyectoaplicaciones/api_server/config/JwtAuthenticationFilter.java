@@ -1,5 +1,6 @@
 package com.example.proyectoaplicaciones.api_server.config;
 
+import com.example.proyectoaplicaciones.api_server.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +27,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.userDetailsService = userDetailsService;
     }
 
+    // --- INICIO DE LA CORRECCIÓN FINAL ---
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        // Le decimos al filtro que NO se ejecute si la ruta contiene "/api/auth".
+        // Esto permite que las peticiones de login y registro pasen sin ser inspeccionadas.
+        return request.getServletPath().contains("/api/auth");
+    }
+    // --- FIN DE LA CORRECCIÓN FINAL ---
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -34,21 +44,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
+        final String jwt;
+        final String userEmail;
+
+        // Este bloque ahora solo se ejecutará para las rutas protegidas.
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String jwt = authHeader.substring(7);
-        final String userEmail = jwtService.extractUsername(jwt);
+        jwt = authHeader.substring(7);
+        userEmail = jwtService.extractUsername(jwt);
 
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-            // --- INICIO DE LA CORRECCIÓN ---
-            // La llamada ahora pasa el objeto UserDetails completo, como debe ser.
             if (jwtService.isTokenValid(jwt, userDetails)) {
-            // --- FIN DE LA CORRECCIÓN ---
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
