@@ -27,22 +27,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .csrf(AbstractHttpConfigurer::disable) // Desactivar CSRF para APIs sin estado
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // No crear sesiones
+                .authenticationProvider(authenticationProvider) // Usar nuestro proveedor de autenticación personalizado
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) // Añadir nuestro filtro de JWT
                 .authorizeHttpRequests(authz -> authz
-                        // --- INICIO DE LA CORRECCIÓN ---
-                        // Regla 1: Permitir explícita y únicamente el acceso a los endpoints de autenticación.
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        // Regla 2: Permitir la lectura (GET) de posts y comentarios a cualquiera.
+                        // Regla 1: Los endpoints de autenticación son PÚBLICOS para todos.
+                        .requestMatchers("/api/auth/**").permitAll()
+                        // Regla 2: La lectura (GET) de posts y comentarios es PÚBLICA.
                         .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/comments/**").permitAll()
-                        // Regla 3: Proteger las rutas de borrado SÓLO para Admins.
+                        // Regla 3: El borrado (DELETE) de posts y comentarios requiere el rol de ADMIN.
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/**", "/api/comments/**").hasRole(Role.ADMIN.name())
-                        // Regla 4: CUALQUIER OTRA petición debe estar autenticada.
+                        // Regla 4: CUALQUIER OTRA petición requiere que el usuario esté autenticado.
                         .anyRequest().authenticated()
-                        // --- FIN DE LA CORRECCIÓN ---
                 );
+
         return http.build();
     }
 }
+
