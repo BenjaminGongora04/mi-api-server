@@ -8,6 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets; // <-- Se añade esta importación
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -48,13 +49,10 @@ public class JwtService {
                 .compact();
     }
 
-    // --- INICIO DE LA CORRECCIÓN ---
-    // El método ahora recibe UserDetails, que es el estándar de Spring Security.
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
-    // --- FIN DE LA CORRECCIÓN ---
 
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
@@ -72,8 +70,14 @@ public class JwtService {
                 .getBody();
     }
 
+    // --- INICIO DE LA CORRECCIÓN FINAL ---
+    // Se corrige la forma en que se lee la clave secreta.
+    // En lugar de intentar decodificarla como Base64 (lo que causaba el error),
+    // obtenemos los bytes directamente del String.
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+    // --- FIN DE LA CORRECCIÓN FINAL ---
 }
+
